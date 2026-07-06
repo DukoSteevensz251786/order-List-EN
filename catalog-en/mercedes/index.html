@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Van Vliet Automotive — Mercedes-Benz Parts Catalogue</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#14294B; --blue:#2E5496; --blue2:#3D6BC4;
+  --amber:#E8850C; --amber-d:#C4700A;
+  --bg:#EAEEF3; --card:#FFFFFF; --ink:#182233; --muted:#6A7788;
+  --line:#DCE3EC; --ok:#1F8A4C; --danger:#C0392B;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:88px}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+h1,h2,h3{margin:0}
+.top{position:sticky;top:0;z-index:40;background:var(--navy);color:#fff;box-shadow:0 2px 10px rgba(20,41,75,.25)}
+.top-in{max-width:1080px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:34px;height:34px;border-radius:7px;background:var(--amber);display:grid;place-items:center;font-weight:800;color:var(--navy);font-size:15px;letter-spacing:-.5px;flex:none}
+.brand h1{font-size:16px;font-weight:700;letter-spacing:.2px;line-height:1.15}
+.brand .sub{font-size:11px;color:#B9C6DD;font-weight:500}
+.brandnav{display:flex;gap:7px;margin-top:11px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.brandnav a{flex:none;font-size:13px;font-weight:700;color:#B9C6DD;text-decoration:none;background:rgba(255,255,255,.10);padding:7px 14px;border-radius:9px;white-space:nowrap;transition:.12s}
+.brandnav a:hover{color:#fff;background:rgba(255,255,255,.18)}
+.brandnav a.active{background:var(--amber);color:var(--navy)}
+.search{margin-top:11px;position:relative}
+.search input{width:100%;border:none;border-radius:10px;padding:12px 14px 12px 40px;font-size:15px;background:#fff;color:var(--ink)}
+.search input:focus{outline:3px solid var(--amber)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
+.catbar{max-width:1080px;margin:0 auto;padding:0 16px 12px}
+.catsel{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 12px}
+.catsel span{font-size:12px;font-weight:600;color:#B9C6DD;flex:none}
+.catsel select{flex:1;appearance:none;-webkit-appearance:none;border:none;background:transparent;color:#fff;font-family:inherit;font-size:14px;font-weight:700;padding-right:20px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23F4B23E' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right center}
+.catsel select option{color:#14294B;background:#fff}
+.promise{max-width:1080px;margin:14px auto 0;padding:0 16px}
+.promise-in{position:relative;overflow:hidden;border-radius:13px;background:linear-gradient(120deg,var(--navy) 0%,var(--blue) 55%,var(--blue2) 100%);color:#fff;padding:15px 16px 15px 58px;box-shadow:0 6px 20px rgba(20,41,75,.28);border:2px solid var(--amber)}
+.promise-in::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--amber)}
+.promise-ico{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;background:var(--amber);display:grid;place-items:center;color:var(--navy);flex:none;animation:promisePulse 2.2s ease-in-out infinite}
+@keyframes promisePulse{0%,100%{box-shadow:0 0 0 0 rgba(232,133,12,.55)}50%{box-shadow:0 0 0 8px rgba(232,133,12,0)}}
+.promise-t{font-size:14.5px;font-weight:800;letter-spacing:.2px;line-height:1.25;text-transform:uppercase}
+.promise-t .hl{color:var(--amber)}
+.promise-s{font-size:12.5px;color:#D7E1F1;line-height:1.4;margin-top:3px;font-weight:500}
+@media(max-width:520px){.promise-in{padding-left:52px}.promise-t{font-size:13.5px}}
+.note{max-width:1080px;margin:12px auto 0;padding:0 16px}
+.note-in{background:#FFF6E8;border:1px solid #F3D9A8;border-radius:10px;padding:10px 13px;font-size:12.5px;color:#7A5A16;line-height:1.4}
+.note-in b{color:#5E4410}
+.wrap{max-width:1080px;margin:0 auto;padding:14px 16px}
+.count{font-size:12.5px;color:var(--muted);margin:2px 2px 12px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr;gap:11px}
+@media(min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+@media(min-width:940px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px;display:flex;flex-direction:column;gap:9px;transition:.12s}
+.card.incart{border-color:var(--amber);box-shadow:0 0 0 2px rgba(232,133,12,.18)}
+.pn{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:-.3px;color:var(--navy)}
+.desc{font-size:14px;font-weight:600;line-height:1.3}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-2px}
+.tag{font-size:11px;font-weight:600;color:var(--blue);background:#E7EEF9;padding:3px 8px;border-radius:6px}
+.avail{font-size:12px;color:var(--muted)}
+.avail b{color:var(--ink)}
+.priceline{display:flex;align-items:baseline;gap:5px;margin-top:auto}
+.price{font-size:20px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.price .cur{font-size:13px;font-weight:700;color:var(--muted)}
+.unit-lbl{font-size:11px;color:var(--muted)}
+.addrow{display:flex;gap:8px;align-items:stretch}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.stepper button{width:34px;font-size:19px;font-weight:600;color:var(--blue);background:#F4F7FB}
+.stepper button:active{background:#E4EBF5}
+.stepper input{width:46px;border:none;text-align:center;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.add{flex:1;background:var(--amber);color:var(--navy);font-weight:800;font-size:14px;border-radius:9px;padding:0 12px;transition:.12s;display:grid;place-items:center}
+.add:active{background:var(--amber-d)}
+.add.done{background:var(--ok);color:#fff}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty svg{opacity:.35;margin-bottom:10px}
+.cartbar{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--navy);color:#fff;padding:11px 16px calc(11px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:14px;box-shadow:0 -3px 16px rgba(20,41,75,.3);transform:translateY(120%);transition:transform .22s ease}
+.cartbar.show{transform:translateY(0)}
+.cartbar .info{flex:1}
+.cartbar .n{font-size:13px;color:#B9C6DD;font-weight:600}
+.cartbar .t{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.cartbar button{background:var(--amber);color:var(--navy);font-weight:800;font-size:15px;border-radius:10px;padding:13px 22px}
+.cartbar button:active{background:var(--amber-d)}
+.ov{position:fixed;inset:0;z-index:60;background:rgba(15,25,45,.55);display:none;align-items:flex-end;justify-content:center}
+.ov.show{display:flex}
+@media(min-width:640px){.ov{align-items:center}}
+.sheet{background:var(--bg);width:100%;max-width:620px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:640px){.sheet{border-radius:16px;max-height:88vh}}
+.sheet-h{background:var(--navy);color:#fff;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex:none}
+.sheet-h h2{font-size:17px;font-weight:700}
+.x{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.14);color:#fff;font-size:19px;display:grid;place-items:center}
+.sheet-b{overflow-y:auto;padding:14px 16px;flex:1}
+.sheet-f{flex:none;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
+.line{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:9px}
+.line-top{display:flex;justify-content:space-between;gap:10px}
+.line .lpn{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--navy)}
+.bpill{font-family:var(--sans);font-size:10px;font-weight:800;color:#fff;background:var(--blue);padding:2px 6px;border-radius:5px;vertical-align:middle;margin-right:5px}
+.line .ld{font-size:13.5px;font-weight:600;margin-top:2px}
+.line .rm{color:var(--danger);font-size:12px;font-weight:700;flex:none}
+.line-bot{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.line .lt{font-size:15px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.clearrow{text-align:right;margin-bottom:8px}
+.clearrow button{color:var(--danger);font-size:12.5px;font-weight:700}
+.subtot{display:flex;justify-content:space-between;align-items:baseline;padding:6px 4px 2px}
+.subtot .lbl{font-size:14px;color:var(--muted);font-weight:600}
+.subtot .val{font-size:24px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.field label .req{color:var(--danger)}
+.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-size:15px;font-family:inherit;background:#fff}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,84,150,.15)}
+.field textarea{resize:vertical;min-height:64px}
+.field .err{border-color:var(--danger)!important}
+.btn{width:100%;border-radius:11px;padding:14px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:active{background:var(--amber-d)}
+.btn-wa{background:#25D366;color:#fff;margin-top:10px}
+.btn-wa:active{background:#1EAE54}
+.btn:disabled{opacity:.5}
+.mini{font-size:11.5px;color:var(--muted);text-align:center;margin-top:11px;line-height:1.45}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="mark">VV</div>
+      <div><h1>Van Vliet Automotive</h1><div class="sub">Genuine Mercedes-Benz Parts &bull; OE surplus stock</div></div>
+    </div>
+    <nav class="brandnav" id="brandnav"></nav>
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#182233" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search by part number or description…" autocomplete="off">
+    </div>
+  </div>
+  <div class="catbar"><label class="catsel"><span>Category</span><select id="catsel"></select></label></div>
+</header>
+
+<div class="promise"><div class="promise-in">
+  <div class="promise-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#14294B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg></div>
+  <div class="promise-t">We ship from the <span class="hl">Netherlands</span> &mdash; and still aim to come in <span class="hl">BELOW</span> your local purchase price</div>
+  <div class="promise-s">Compare us with your local suppliers: our goal is that, <b>even with freight included</b>, the final price still works out cheaper. Send us your request and we'll agree the best price by volume.</div>
+</div></div>
+
+<div class="note"><div class="note-in"><b>Reference prices</b> in EUR, ex-works (Netherlands). An order here is a <b>quotation request</b> — we confirm the final price by lot/volume and come back to you with freight and lead time. Your order is kept as you move between brand catalogues.</div></div>
+
+<main class="wrap">
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="cartbar" id="cartbar">
+  <div class="info"><div class="n" id="cbn">0 items</div><div class="t" id="cbt">&euro; 0.00</div></div>
+  <button id="openCart">View order</button>
+</div>
+
+<!-- CART MODAL -->
+<div class="ov" id="cartOv">
+  <div class="sheet" role="dialog" aria-label="Your order">
+    <div class="sheet-h"><h2>Your order</h2><button class="x" id="closeCart" aria-label="Close">&times;</button></div>
+    <div class="sheet-b" id="cartLines"></div>
+    <div class="sheet-f">
+      <div class="clearrow" id="clearWrap" style="display:none"><button id="clearCart">Clear order</button></div>
+      <div class="subtot"><span class="lbl">Subtotal (ref.)</span><span class="val" id="cartTotal">&euro; 0.00</span></div>
+      <button class="btn btn-primary" id="toCheckout" style="margin-top:10px">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="ov" id="coOv">
+  <div class="sheet" role="dialog" aria-label="Send request">
+    <div class="sheet-h"><h2>Send request</h2><button class="x" id="closeCo" aria-label="Close">&times;</button></div>
+    <div class="sheet-b">
+      <div class="field"><label>Company <span class="req">*</span></label><input id="fEmp" autocomplete="organization"></div>
+      <div class="field"><label>Your name <span class="req">*</span></label><input id="fNome" autocomplete="name"></div>
+      <div class="field"><label>WhatsApp or email <span class="req">*</span></label><input id="fCont" autocomplete="tel"></div>
+      <div class="field"><label>Notes</label><textarea id="fObs" placeholder="Lead time, destination, container quantity…"></textarea></div>
+    </div>
+    <div class="sheet-f">
+      <button class="btn btn-primary" id="dl">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14294B" stroke-width="2.4"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>
+        Download spreadsheet (.xlsx)
+      </button>
+      <button class="btn btn-wa" id="wa">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M17.5 14.4c-.3-.15-1.7-.84-2-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.17.19-.33.22-.62.07-.29-.15-1.22-.45-2.32-1.43-.86-.77-1.44-1.71-1.6-2-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.5.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.08-.15-.64-1.55-.88-2.12-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.29-1 .98-1 2.38s1.02 2.76 1.17 2.95c.14.19 2.01 3.08 4.88 4.32.68.29 1.21.47 1.63.6.68.22 1.31.19 1.8.11.55-.08 1.7-.69 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.19-.55-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+        Send via WhatsApp
+      </button>
+      <div class="mini">Your order can include parts from more than one brand. The spreadsheet opens in Excel and on any phone — download it and send it to us by WhatsApp or email, or tap <b>Send via WhatsApp</b> for the summary.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==== CONFIG: Van Vliet WhatsApp (international format, digits only) ==== */
+const VAN_VLIET_WA = "31614283465".replace(/[^0-9]/g,"");
+const BRAND = "Mercedes";
+const ITEMS = [{"pn": "A947 264 19 01", "d": "PTO Mercedes", "q": 3, "p": 500.0, "c": "Transmission & Clutch"}, {"pn": "A0014609648", "d": "Drag link end", "q": 8, "p": 128.13, "c": "Suspension & Steering"}, {"pn": "A9723230400", "d": "Shock absorber front", "q": 4, "p": 172.45, "c": "Suspension & Steering"}, {"pn": "A9674210310", "d": "Brake lining front", "q": 2, "p": 161.47, "c": "Brakes"}, {"pn": "A0013309935", "d": "Tie rod", "q": 2, "p": 142.67, "c": "Suspension & Steering"}, {"pn": "A9705011282", "d": "Cooling hose 2", "q": 2, "p": 119.06, "c": "Cooling"}, {"pn": "A000 180 82 09", "d": "Air Filter Atego", "q": 4, "p": 55.86, "c": "Filters"}, {"pn": "A961 260 86 51", "d": "Control cable", "q": 1, "p": 217.83, "c": "Body & Cab"}, {"pn": "A9674210010", "d": "Brake lining rear", "q": 2, "p": 105.62, "c": "Brakes"}, {"pn": "A943 545 28 07", "d": "Switch", "q": 5, "p": 31.46, "c": "Electrical"}, {"pn": "A9061800109", "d": "Oil Filter", "q": 12, "p": 9.54, "c": "Filters"}, {"pn": "A9738350247", "d": "Interior Filter", "q": 3, "p": 32.11, "c": "Filters"}, {"pn": "A9705011682", "d": "Cooling hose 1", "q": 2, "p": 33.19, "c": "Cooling"}, {"pn": "A0028119233", "d": "Mirror glass", "q": 1, "p": 63.2, "c": "Body & Cab"}, {"pn": "A9069934096", "d": "V-belt", "q": 2, "p": 20.75, "c": "Engine"}, {"pn": "A686 090 01 51", "d": "Fuel Filter Atego", "q": 3, "p": 11.12, "c": "Filters"}, {"pn": "A943 545 13 07", "d": "Switch", "q": 1, "p": 31.46, "c": "Electrical"}, {"pn": "A0005016415", "d": "Cooling tank cap", "q": 2, "p": 12.98, "c": "Cooling"}, {"pn": "A906 180 01 09", "d": "Oil Filter", "q": 3, "p": 7.01, "c": "Filters"}, {"pn": "A9909970245", "d": "Seal for oil plug", "q": 12, "p": 1.4, "c": "Engine"}, {"pn": "A9416891339", "d": "Cover", "q": 1, "p": 7.78, "c": "Body & Cab"}, {"pn": "A9705280110", "d": "Sealing cap radiator", "q": 2, "p": 3.32, "c": "Cooling"}];
+const CATS = [...new Set(ITEMS.map(i=>i.c))].sort((a,b)=>a.localeCompare(b,'en'));
+
+/* ---- shared cross-brand order: persists in localStorage, shared across all
+   brand pages on the same site (same origin). Falls back to in-memory if
+   storage is unavailable (e.g. a sandboxed preview). ---- */
+const CART_KEY = "vanvliet_order_v1";
+const ck = (brand,pn)=> brand+"||"+pn;
+function loadCart(){ try{ return JSON.parse(localStorage.getItem(CART_KEY))||{}; }catch(e){ return {}; } }
+function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){} }
+let cart = loadCart();                 // key -> {brand,pn,d,p,c,q,qa}
+let activeCat = "All", term = "";
+
+const eur = n => "\u20ac " + n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+const $ = s => document.querySelector(s);
+const cartArr = ()=> Object.values(cart).sort((a,b)=> a.brand.localeCompare(b.brand) || a.d.localeCompare(b.d));
+function cartTotal(){ return Object.values(cart).reduce((s,e)=>s+e.p*e.q,0); }
+function cartCount(){ return Object.keys(cart).length; }
+
+/* brand switcher (relative links work on GitHub Pages) */
+const BRANDS_NAV=[["VW","../vw/"],["MAN","../man/"],["Mercedes","../mercedes/"],["Iveco","../iveco/"],["Toyota","../toyota/"]];
+(function(){const nav=$("#brandnav");BRANDS_NAV.forEach(([lbl,href])=>{const a=document.createElement("a");a.href=href;a.textContent=lbl;if(lbl===BRAND)a.className="active";nav.appendChild(a);});})();
+
+/* category dropdown */
+const catSel = $("#catsel");
+["All",...CATS].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;catSel.appendChild(o);});
+catSel.onchange=()=>{activeCat=catSel.value;render();};
+
+function visible(){
+  const t=term.trim().toLowerCase();
+  return ITEMS.filter(i=>{
+    if(activeCat!=="All" && i.c!==activeCat) return false;
+    if(t && !(i.pn.toLowerCase().includes(t)||i.d.toLowerCase().includes(t))) return false;
+    return true;
+  });
+}
+function render(){
+  const list=visible(), grid=$("#grid");
+  $("#count").textContent = list.length + (list.length===1?" item":" items");
+  if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#6A7788" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><div>No parts found.</div></div>';return;}
+  grid.innerHTML="";
+  for(const i of list){
+    const e0=cart[ck(BRAND,i.pn)];
+    const inc=!!e0;
+    const el=document.createElement("div");
+    el.className="card"+(inc?" incart":"");
+    el.innerHTML=`
+      <div class="pn">${i.pn}</div>
+      <div class="desc">${i.d}</div>
+      <div class="meta"><span class="tag">${i.c}</span><span class="avail">In stock: <b>${i.q.toLocaleString('en-GB')}</b></span></div>
+      <div class="priceline"><span class="price"><span class="cur">\u20ac</span>${i.p.toLocaleString('en-GB',{minimumFractionDigits:2})}</span><span class="unit-lbl">/ ea.</span></div>
+      <div class="addrow">
+        <div class="stepper">
+          <button aria-label="less" data-a="dec">&minus;</button>
+          <input type="number" min="1" max="${i.q}" value="${inc?e0.q:1}" data-qi>
+          <button aria-label="more" data-a="inc">+</button>
+        </div>
+        <button class="add ${inc?'done':''}" data-add>${inc?'&#10003; In order ('+e0.q+')':'Add'}</button>
+      </div>`;
+    const qi=el.querySelector('[data-qi]');
+    const clamp=()=>{let v=parseInt(qi.value)||1;v=Math.max(1,Math.min(i.q,v));qi.value=v;return v;};
+    el.querySelector('[data-a="dec"]').onclick=()=>{qi.value=Math.max(1,(parseInt(qi.value)||1)-1);};
+    el.querySelector('[data-a="inc"]').onclick=()=>{qi.value=Math.min(i.q,(parseInt(qi.value)||1)+1);};
+    qi.onchange=clamp;
+    el.querySelector('[data-add]').onclick=()=>{cart[ck(BRAND,i.pn)]={brand:BRAND,pn:i.pn,d:i.d,p:i.p,c:i.c,q:clamp(),qa:i.q};saveCart();updateBar();render();};
+    grid.appendChild(el);
+  }
+}
+function updateBar(){
+  const n=cartCount();
+  $("#cartbar").classList.toggle("show",n>0);
+  $("#cbn").textContent=n+(n===1?" item":" items");
+  $("#cbt").innerHTML=eur(cartTotal());
+}
+/* cart modal */
+function renderCart(){
+  const box=$("#cartLines"), arr=cartArr();
+  if(!arr.length){box.innerHTML='<div class="empty">Your order is empty.</div>';$("#cartTotal").innerHTML=eur(0);$("#clearWrap").style.display="none";return;}
+  $("#clearWrap").style.display="";
+  box.innerHTML="";
+  for(const e of arr){
+    const key=ck(e.brand,e.pn);
+    const el=document.createElement("div");el.className="line";
+    el.innerHTML=`
+      <div class="line-top"><div><div class="lpn"><span class="bpill">${e.brand}</span>${e.pn}</div><div class="ld">${e.d}</div></div>
+      <button class="rm" data-rm>Remove</button></div>
+      <div class="line-bot">
+        <div class="stepper">
+          <button data-a="dec">&minus;</button>
+          <input type="number" min="1" max="${e.qa}" value="${e.q}" data-qi>
+          <button data-a="inc">+</button>
+        </div>
+        <div class="lt">${eur(e.p*e.q)}</div>
+      </div>`;
+    const qi=el.querySelector('[data-qi]');
+    const set=v=>{v=Math.max(1,Math.min(e.qa,parseInt(v)||1));cart[key].q=v;saveCart();renderCart();updateBar();render();};
+    el.querySelector('[data-a="dec"]').onclick=()=>set(e.q-1);
+    el.querySelector('[data-a="inc"]').onclick=()=>set(e.q+1);
+    qi.onchange=ev=>set(ev.target.value);
+    el.querySelector('[data-rm]').onclick=()=>{delete cart[key];saveCart();renderCart();updateBar();render();};
+    box.appendChild(el);
+  }
+  $("#cartTotal").innerHTML=eur(cartTotal());
+}
+function openOv(id){$(id).classList.add("show");document.body.style.overflow="hidden";}
+function closeOv(id){$(id).classList.remove("show");document.body.style.overflow="";}
+$("#openCart").onclick=()=>{renderCart();openOv("#cartOv");};
+$("#closeCart").onclick=()=>closeOv("#cartOv");
+$("#clearCart").onclick=()=>{if(confirm("Remove all items from your order?")){cart={};saveCart();renderCart();updateBar();render();}};
+$("#toCheckout").onclick=()=>{if(!cartCount())return;closeOv("#cartOv");openOv("#coOv");};
+$("#closeCo").onclick=()=>closeOv("#coOv");
+[["#cartOv"],["#coOv"]].forEach(([id])=>$(id).addEventListener("click",e=>{if(e.target===$(id))closeOv(id);}));
+$("#q").addEventListener("input",e=>{term=e.target.value;render();});
+
+/* keep pages in sync if the buyer has more than one open */
+window.addEventListener("storage",e=>{if(e.key===CART_KEY){cart=loadCart();render();updateBar();if($("#cartOv").classList.contains("show"))renderCart();}});
+
+/* validation */
+function validate(){
+  let ok=true;
+  [["#fEmp"],["#fNome"],["#fCont"]].forEach(([s])=>{const el=$(s);if(!el.value.trim()){el.classList.add("err");ok=false;}else el.classList.remove("err");});
+  return ok;
+}
+/* xlsx */
+$("#dl").onclick=()=>{
+  if(!validate())return;
+  const rows=cartArr(), total=rows.reduce((s,e)=>s+e.p*e.q,0);
+  const now=new Date();
+  const dstr=now.toLocaleDateString('en-GB')+" "+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const aoa=[
+    ["VAN VLIET AUTOMOTIVE","","","","","",""],
+    ["Quotation Request \u2014 Genuine OE Surplus Parts","","","","","",""],
+    ["",""],
+    ["Company:",$("#fEmp").value.trim(),"","Date:",dstr,"",""],
+    ["Name:",$("#fNome").value.trim(),"","Contact:",$("#fCont").value.trim(),"",""],
+    ["",""],
+    ["Part Number","Brand","Description","Category","Qty requested","Unit price (EUR)","Line total (EUR)"]
+  ];
+  rows.forEach(e=>aoa.push([e.pn,e.brand,e.d,e.c,e.q,e.p,+(e.p*e.q).toFixed(2)]));
+  aoa.push(["","","","","","TOTAL",+total.toFixed(2)]);
+  aoa.push([""]);
+  const obs=$("#fObs").value.trim();
+  if(obs)aoa.push(["Notes:",obs]);
+  aoa.push(["","Reference prices ex-works (NL). Final price by lot/volume, on request. Freight and lead time quoted separately."]);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:18},{wch:10},{wch:38},{wch:22},{wch:15},{wch:16},{wch:16}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}}];
+  const hdr=6;
+  for(let ri=hdr+1;ri<hdr+1+rows.length+1;ri++){
+    ["F","G"].forEach(col=>{const ad=col+(ri+1);if(ws[ad])ws[ad].z='#,##0.00';});
+  }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Order");
+  const emp=($("#fEmp").value.trim()||"order").replace(/[^\w ]/g,"").replace(/\s+/g,"_");
+  XLSX.writeFile(wb,`VanVliet_Order_${emp}.xlsx`);
+};
+/* whatsapp */
+$("#wa").onclick=()=>{
+  if(!validate())return;
+  const rows=cartArr(), total=rows.reduce((s,e)=>s+e.p*e.q,0);
+  let msg=`*Quotation request \u2014 Van Vliet*\n`;
+  msg+=`Company: ${$("#fEmp").value.trim()}\nName: ${$("#fNome").value.trim()}\nContact: ${$("#fCont").value.trim()}\n\n`;
+  rows.forEach(e=>{msg+=`\u2022 [${e.brand}] ${e.pn} \u2014 ${e.d} \u2014 Qty: ${e.q}\n`;});
+  msg+=`\nSubtotal (ref.): ${eur(total)}`;
+  const obs=$("#fObs").value.trim();if(obs)msg+=`\nNotes: ${obs}`;
+  msg+=`\n\n(spreadsheet attached)`;
+  window.open(`https://wa.me/${VAN_VLIET_WA}?text=${encodeURIComponent(msg)}`,"_blank");
+};
+render();updateBar();
+</script>
+</body>
+</html>
