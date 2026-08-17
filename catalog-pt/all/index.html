@@ -311,7 +311,7 @@ function cartTotal(){ return Object.values(cart).reduce((s,e)=>s+e.p*e.q,0); }
 function cartCount(){ return Object.keys(cart).length; }
 
 /* brand switcher (relative links work on GitHub Pages) */
-const BRANDS_NAV=[["Todos","../all/"],["VW","../vw/"],["MAN","../man/"],["Mercedes","../mercedes/"],["Iveco","../iveco/"],["Toyota","../toyota/"]];
+const BRANDS_NAV=[["Todos","../all/"],["VW","../vw/"],["MAN","../man/"],["Mercedes","../mercedes/"],["Iveco","../iveco/"],["Toyota","../toyota/"],["Estoque","../warehouse/"]];
 (function(){const nav=$("#brandnav");BRANDS_NAV.forEach(([lbl,href])=>{const a=document.createElement("a");a.href=href;a.textContent=lbl;if(lbl===BRAND)a.className="active";nav.appendChild(a);});})();
 
 /* category dropdown */
