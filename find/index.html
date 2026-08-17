@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Parts Finder — Van Vliet Automotive</title>
+<style>
+:root{
+  --navy:#14294B; --blue:#2E5496; --blue2:#3D6BC4;
+  --amber:#E8850C; --amber-d:#C4700A;
+  --bg:#EAEEF3; --card:#FFFFFF; --ink:#182233; --muted:#6A7788;
+  --line:#DCE3EC; --ok:#1F8A4C; --danger:#C0392B;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:60px}
+.top{background:var(--navy);color:#fff;box-shadow:0 2px 10px rgba(20,41,75,.25)}
+.top-in{max-width:820px;margin:0 auto;padding:16px 18px;display:flex;align-items:center;gap:11px}
+.mark{width:38px;height:38px;border-radius:9px;background:var(--amber);display:grid;place-items:center;font-weight:800;color:var(--navy);font-size:16px;letter-spacing:-.5px;flex:none}
+.top h1{font-size:17px;font-weight:800;margin:0;line-height:1.2}
+.top .sub{font-size:11.5px;color:#B9C6DD;font-weight:600}
+.wrap{max-width:820px;margin:0 auto;padding:20px 18px 40px}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 4px 16px rgba(20,41,75,.06)}
+.lbl{font-size:12px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin:0 0 7px;display:block}
+
+/* multi-select dropdown */
+.ms{position:relative;margin-bottom:16px}
+.ms-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;cursor:pointer;color:var(--ink);text-align:left}
+.ms-btn:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,84,150,.15)}
+.ms-btn .chev{transition:.15s;flex:none;opacity:.6}
+.ms.open .ms-btn .chev{transform:rotate(180deg)}
+.ms-btn .val{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 12px 30px rgba(20,41,75,.18);padding:6px;display:none}
+.ms.open .ms-pop{display:block}
+.ms-opt{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:8px;cursor:pointer;font-size:14.5px;font-weight:600}
+.ms-opt:hover{background:var(--bg)}
+.ms-opt input{width:18px;height:18px;accent-color:var(--amber);flex:none}
+.ms-opt.allrow{border-bottom:1px solid var(--line);border-radius:0;margin-bottom:4px;font-weight:800;color:var(--navy)}
+
+/* prompt */
+.ta-wrap{position:relative}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 14px;font-size:15px;font-family:inherit;resize:vertical;min-height:82px;background:#fff;color:var(--ink);line-height:1.45}
+textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,84,150,.15)}
+.count{position:absolute;right:12px;bottom:10px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;background:#fff;padding:0 3px}
+.hint{font-size:12px;color:var(--muted);margin:6px 2px 0;line-height:1.4}
+
+.row{display:flex;gap:10px;align-items:center;margin-top:16px}
+.btn{flex:1;border:none;border-radius:11px;padding:14px;font-size:15.5px;font-weight:800;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;background:var(--amber);color:var(--navy);transition:.12s}
+.btn:hover{background:var(--amber-d);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{flex:none;background:transparent;color:var(--muted);border:1.5px solid var(--line)}
+.btn.ghost:hover{background:var(--bg);color:var(--ink)}
+
+.mode{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:#7A5A16;background:#FFF6E8;border:1px solid #F3D9A8;border-radius:20px;padding:5px 11px;margin-top:14px}
+.mode.live{color:#0f5c33;background:#E8F6EE;border-color:#B7E2C7}
+.mode .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+
+/* results */
+.results{margin-top:22px;display:grid;gap:11px}
+.status{font-size:13px;color:var(--muted);font-weight:600;padding:4px 2px}
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;border-left:4px solid var(--amber);animation:pop .18s ease}
+@keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.rcard-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.rpn{font-family:var(--mono);font-size:14px;font-weight:800;color:var(--navy)}
+.rbrand{font-size:10.5px;font-weight:800;color:#fff;background:var(--blue);padding:3px 8px;border-radius:6px;flex:none}
+.rdesc{font-size:14.5px;font-weight:600;margin-top:4px}
+.rmeta{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+.rtag{font-size:11px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:6px;padding:3px 9px}
+.rscore{font-size:11px;font-weight:800;color:var(--ok)}
+.rlink{margin-left:auto;font-size:12.5px;font-weight:800;color:var(--blue);text-decoration:none}
+.rlink:hover{text-decoration:underline}
+
+.empty{text-align:center;color:var(--muted);padding:34px 16px;font-size:14px}
+.empty svg{opacity:.4;margin-bottom:10px}
+.err{background:#FDECEA;border:1px solid #F5C6C0;color:#8A2A20;border-radius:10px;padding:12px 14px;font-size:13.5px;font-weight:600}
+
+/* loading skeleton */
+.skel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;border-left:4px solid var(--line)}
+.sk{height:12px;border-radius:6px;background:linear-gradient(90deg,#eef1f5 25%,#e2e7ee 37%,#eef1f5 63%);background-size:400% 100%;animation:sh 1.2s infinite}
+@keyframes sh{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.sk.w1{width:34%;margin-bottom:9px}.sk.w2{width:72%;margin-bottom:9px}.sk.w3{width:48%}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="mark">VV</div>
+    <div>
+      <h1>AI Parts Finder</h1>
+      <div class="sub">Describe what you need &mdash; in any language</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="panel">
+    <label class="lbl">Brands</label>
+    <div class="ms" id="ms">
+      <button type="button" class="ms-btn" id="msBtn" aria-haspopup="listbox" aria-expanded="false">
+        <span class="val" id="msVal">All brands</span>
+        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="ms-pop" id="msPop" role="listbox" aria-multiselectable="true"></div>
+    </div>
+
+    <label class="lbl" for="q">What are you looking for?</label>
+    <div class="ta-wrap">
+      <textarea id="q" maxlength="300" placeholder="e.g. front brake linings for a TGX &middot; vedação do motor &middot; air dryer cartridge &middot; 81.50221"></textarea>
+      <span class="count" id="count">0 / 300</span>
+    </div>
+    <p class="hint">Plain language works. You can write in English, Portuguese, German or Dutch, or paste a partial part number.</p>
+
+    <div id="tsBox" style="margin-top:14px"></div>
+
+    <div class="row">
+      <button class="btn" id="go">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 9l-4.8 3.7L17 19l-5-3.6L7 19l1.8-6.3L4 9l6.1-.2z"/></svg>
+        Find parts
+      </button>
+      <button class="btn ghost" id="clear" title="Clear">Clear</button>
+    </div>
+
+    <div id="modeBadge"></div>
+  </div>
+
+  <div class="results" id="results" aria-live="polite"></div>
+</main>
+
+<script>
+/* =====================================================================
+   CONFIG
+   Leave endpoint blank to run in DEMO mode (local matching, no API).
+   Set it to your Cloudflare Worker URL to use the real ChatGPT-backed
+   search. The Worker holds the OpenAI key + does rate limiting.
+   ===================================================================== */
+const CONFIG = {
+  endpoint: "",                    // "https://oetrucksurplus.parts/api/search"  OR  "https://parts-ai.<sub>.workers.dev/search"
+  turnstileSiteKey: "",            // Cloudflare Turnstile SITE key (public). Leave "" to run without the bot check.
+  maxPromptChars: 300,
+  minRequestIntervalMs: 2500,      // client-side courtesy throttle (NOT security)
+  maxResults: 20,
+};
+
+const BRANDS = ["VW Truck & Bus", "MAN", "Mercedes-Benz", "Iveco / Fiat", "Toyota"];
+const BRAND_SLUG = {
+  "VW Truck & Bus":"vw","MAN":"man","Mercedes-Benz":"mercedes","Iveco / Fiat":"iveco","Toyota":"toyota"
+};
+
+/* ---- Demo dataset: a real sample of MAN stock (production uses the full
+        catalogue for every selected brand, via the Worker). ---- */
+const DEMO = [
+  ["81.08405-0028","Air/oil filter element","Filters"],
+  ["81.61910-0046","Cab / pollen filter","Filters"],
+  ["51.05500-6073","Engine oil filter element","Filters"],
+  ["51.12503-0052","Fuel filter insert","Filters"],
+  ["81.52102-6410","Air dryer / air drier cartridge","Filters"],
+  ["51.95800-7494","Belt tensioner","Engine"],
+  ["51.96820-0324","Ribbed v-belt 8PK1875","Engine"],
+  ["51.09100-7657","Turbocharger","Engine"],
+  ["51.04401-6399","Camshaft","Engine"],
+  ["81.15101-0346U","Exhaust silencer","Engine"],
+  ["81.30725-6124","Clutch booster","Transmission & Clutch"],
+  ["81.30550-0286","Clutch release bearing","Transmission & Clutch"],
+  ["81.50221-6142","Set of drum brake linings 18,0","Brakes"],
+  ["81.50110-0144","Brake drum 410X220","Brakes"],
+  ["81.51101-6324","Brake cylinder","Brakes"],
+  ["64.50221-7016","Brake shoe","Brakes"],
+  ["81.06101-6800","Radiator","Cooling"],
+  ["81.96301-0961","Cooling water hose","Cooling"],
+  ["51.06402-6009","Thermostat 83°","Cooling"],
+  ["81.25320-6043","Flasher / indicator relay","Lighting"],
+  ["81.25225-6580","LED rear light","Lighting"],
+  ["81.28100-6071","Radio system MMT3 STARTER DAB","Electrical"],
+  ["07.97020-0882","Battery 12V 88Ah","Electrical"],
+  ["81.25902-0508","Solenoid valve","Electrical"],
+  ["81.63700-6089","Outside mirror","Body & Cab"],
+  ["81.26440-6033","Wiper blade 500 mm","Wipers"],
+  ["81.26485-6033","Windscreen washer pump","Wipers"],
+  ["81.12201-5887","Fuel tank","Fuel System"],
+  ["81.43402-6377U","Parabolic spring 8,0T","Suspension & Steering"],
+  ["81.46200-6519","Steering repair kit","Suspension & Steering"],
+].map(([pn,d,c])=>({pn,d,c,brand:"MAN"}));
+
+/* synonyms so the demo "understands" everyday + multilingual wording */
+const SYN = {
+  brake:["brake","brakes","braking","freio","freios","bremse","rem","lining","linings","shoe","drum","pad","pads"],
+  filter:["filter","filtro","filtre","filters","element","cartridge","insert"],
+  engine:["engine","motor","camshaft","turbo","turbocharger","belt","tensioner","exhaust","silencer"],
+  cooling:["cooling","radiator","radiador","coolant","thermostat","water","hose","arrefecimento"],
+  clutch:["clutch","embreagem","kupplung","release","bearing"],
+  light:["light","lights","lamp","lamps","luz","farol","led","flasher","indicator","rear"],
+  electric:["electric","electrical","battery","bateria","solenoid","relay","radio","sensor"],
+  mirror:["mirror","mirrors","espelho","spiegel"],
+  wiper:["wiper","wipers","blade","washer","limpador","palheta","scheibenwischer"],
+  fuel:["fuel","tank","tanque","combustivel","combustível","diesel"],
+  susp:["suspension","spring","steering","direcao","direção","suspensao","suspensão","parabolic"],
+  seal:["seal","gasket","junta","retentor","vedacao","vedação","dichtung","o-ring"],
+};
+const CAT_HINT = {brake:"Brakes",filter:"Filters",engine:"Engine",cooling:"Cooling",clutch:"Transmission & Clutch",light:"Lighting",electric:"Electrical",mirror:"Body & Cab",wiper:"Wipers",fuel:"Fuel System",susp:"Suspension & Steering"};
+
+/* ---------- state + elements ---------- */
+let selected = new Set(BRANDS);      // all selected by default
+let lastReq = 0, busy = false;
+const $ = s => document.querySelector(s);
+const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const esc = s => (s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+/* ---------- build multi-select ---------- */
+const pop = $("#msPop");
+pop.innerHTML =
+  `<label class="ms-opt allrow"><input type="checkbox" id="allChk" checked> Select all brands</label>` +
+  BRANDS.map(b=>`<label class="ms-opt"><input type="checkbox" class="bchk" value="${esc(b)}" checked> ${esc(b)}</label>`).join("");
+const allChk = $("#allChk");
+const bchks = [...document.querySelectorAll(".bchk")];
+
+function refreshVal(){
+  const n = selected.size;
+  $("#msVal").textContent = n===0 ? "Select brands…" : n===BRANDS.length ? "All brands" :
+    n<=2 ? [...selected].join(", ") : `${n} brands selected`;
+  allChk.checked = n===BRANDS.length;
+  allChk.indeterminate = n>0 && n<BRANDS.length;
+}
+allChk.onchange = ()=>{
+  selected = allChk.checked ? new Set(BRANDS) : new Set();
+  bchks.forEach(c=>c.checked=allChk.checked); refreshVal();
+};
+bchks.forEach(c=>c.onchange=()=>{
+  c.checked ? selected.add(c.value) : selected.delete(c.value); refreshVal();
+});
+$("#msBtn").onclick = ()=>{ const m=$("#ms"); m.classList.toggle("open"); $("#msBtn").setAttribute("aria-expanded", m.classList.contains("open")); };
+document.addEventListener("click", e=>{ if(!$("#ms").contains(e.target)) $("#ms").classList.remove("open"); });
+refreshVal();
+
+/* ---------- prompt counter ---------- */
+const q = $("#q");
+q.addEventListener("input", ()=>{ $("#count").textContent = `${q.value.length} / ${CONFIG.maxPromptChars}`; });
+
+/* ---------- mode badge ---------- */
+(function(){
+  const live = !!CONFIG.endpoint;
+  $("#modeBadge").innerHTML =
+    `<span class="mode ${live?'live':''}"><span class="dot"></span>${live?'Live &middot; AI search via your Worker':'Demo mode &middot; local matching (no API key)'}</span>`;
+})();
+
+/* ---------- Turnstile (bot check) ---------- */
+let TS_TOKEN = "", TS_WIDGET = null;
+window.__tsCallback = (t)=>{ TS_TOKEN = t || ""; };
+(function(){
+  if(!CONFIG.turnstileSiteKey) return;
+  const s = document.createElement("script");
+  s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  s.async = true; s.defer = true;
+  s.onload = ()=>{
+    try{
+      TS_WIDGET = window.turnstile.render("#tsBox", {
+        sitekey: CONFIG.turnstileSiteKey,
+        callback: window.__tsCallback,
+        "expired-callback": ()=>{ TS_TOKEN=""; },
+        "error-callback": ()=>{ TS_TOKEN=""; },
+      });
+    }catch(e){}
+  };
+  document.head.appendChild(s);
+})();
+function resetTurnstile(){ try{ if(TS_WIDGET!==null){ window.turnstile.reset(TS_WIDGET); TS_TOKEN=""; } }catch(e){} }
+
+/* ---------- search ---------- */
+$("#go").onclick = run;
+$("#clear").onclick = ()=>{ q.value=""; $("#count").textContent=`0 / ${CONFIG.maxPromptChars}`; $("#results").innerHTML=""; q.focus(); };
+q.addEventListener("keydown", e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") run(); });
+
+async function run(){
+  if(busy) return;
+  const prompt = q.value.trim();
+  const res = $("#results");
+  if(selected.size===0){ res.innerHTML = `<div class="err">Please choose at least one brand.</div>`; return; }
+  if(prompt.length<2){ res.innerHTML = `<div class="err">Tell us what you're looking for.</div>`; return; }
+  const now = Date.now();
+  if(now - lastReq < CONFIG.minRequestIntervalMs){
+    res.innerHTML = `<div class="err">One moment — please wait a couple of seconds between searches.</div>`; return;
+  }
+  if(CONFIG.endpoint && CONFIG.turnstileSiteKey && !TS_TOKEN){
+    res.innerHTML = `<div class="err">Please complete the verification check above, then search.</div>`; return;
+  }
+  lastReq = now; busy = true; $("#go").disabled = true;
+  res.innerHTML = skeletons(4);
+
+  try{
+    const items = CONFIG.endpoint ? await searchWorker(prompt) : await searchDemo(prompt);
+    render(items, prompt);
+  }catch(err){
+    res.innerHTML = `<div class="err">Search failed: ${esc(err.message||"unknown error")}. Please try again.</div>`;
+  }finally{
+    busy = false; $("#go").disabled = false;
+  }
+}
+
+/* real path — calls your Cloudflare Worker (which calls OpenAI) */
+async function searchWorker(prompt){
+  const r = await fetch(CONFIG.endpoint, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ brands:[...selected].map(b=>BRAND_SLUG[b]), query:prompt, token:TS_TOKEN })
+  });
+  resetTurnstile();
+  if(r.status===429) throw new Error("rate limit reached — please wait a minute");
+  if(!r.ok) throw new Error("server returned "+r.status);
+  const data = await r.json();
+  return (data.results||[]).slice(0, CONFIG.maxResults);
+}
+
+/* demo path — local, multilingual keyword matching */
+async function searchDemo(prompt){
+  await new Promise(r=>setTimeout(r, 480)); // simulate latency
+  const pool = DEMO.filter(it => selected.has("MAN") ? it.brand==="MAN" : false);
+  const nq = " "+norm(prompt)+" ";
+  const isPN = /[0-9]{2,}[.\-]?[0-9]/.test(prompt);
+  const groups = Object.entries(SYN).filter(([,words])=>words.some(w=>nq.includes(" "+norm(w))||nq.includes(norm(w))));
+  const scored = pool.map(it=>{
+    let s=0; const hay=norm(it.d+" "+it.c);
+    if(isPN && it.pn.toLowerCase().includes(prompt.toLowerCase().replace(/\s/g,""))) s+=100;
+    norm(prompt).split(/\s+/).filter(t=>t.length>2).forEach(t=>{ if(hay.includes(t)) s+=8; });
+    groups.forEach(([g,words])=>{
+      if(words.some(w=>hay.includes(norm(w)))) s+=6;
+      if(CAT_HINT[g] && it.c===CAT_HINT[g]) s+=5;
+    });
+    return {...it, score:s};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0, CONFIG.maxResults);
+  const max = scored[0]?.score||1;
+  return scored.map(x=>({...x, rel: Math.round(60+40*(x.score/max))}));
+}
+
+/* ---------- render ---------- */
+function render(items, prompt){
+  const res = $("#results");
+  const otherOnly = CONFIG.endpoint ? false : ![...selected].includes("MAN");
+  if(!items.length){
+    res.innerHTML = otherOnly
+      ? emptyBox("Demo data only includes MAN samples. In production the Worker searches the full catalogue for every selected brand.")
+      : emptyBox("No close matches. Try different words, or a broader term.");
+    return;
+  }
+  const head = `<div class="status">${items.length} match${items.length>1?"es":""} for &ldquo;${esc(prompt)}&rdquo;</div>`;
+  res.innerHTML = head + items.map(it=>{
+    const slug = BRAND_SLUG[it.brand] || (it.brand==="MAN"?"man":"");
+    const rel = it.rel!=null ? `<span class="rscore">${it.rel}% match</span>` : "";
+    return `<div class="rcard">
+      <div class="rcard-top">
+        <div><span class="rpn">${esc(it.pn)}</span></div>
+        <span class="rbrand">${esc(it.brand)}</span>
+      </div>
+      <div class="rdesc">${esc(it.d)}</div>
+      <div class="rmeta">
+        <span class="rtag">${esc(it.c)}</span>${rel}
+        <a class="rlink" href="/catalog-en/${slug}/" target="_blank" rel="noopener">Open in catalogue →</a>
+      </div>
+    </div>`;
+  }).join("");
+}
+function skeletons(n){ return Array.from({length:n},()=>`<div class="skel"><div class="sk w1"></div><div class="sk w2"></div><div class="sk w3"></div></div>`).join(""); }
+function emptyBox(msg){ return `<div class="empty"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#6A7788" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><div>${esc(msg)}</div></div>`; }
+</script>
+</body>
+</html>
