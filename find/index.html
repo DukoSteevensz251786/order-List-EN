@@ -136,7 +136,7 @@ textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(4
    search. The Worker holds the OpenAI key + does rate limiting.
    ===================================================================== */
 const CONFIG = {
-  endpoint: "",                    // "https://oetrucksurplus.parts/api/search"  OR  "https://parts-ai.<sub>.workers.dev/search"
+  endpoint: "https://parts-ai.duko-a90.workers.dev/search",                    // "https://oetrucksurplus.parts/api/search"  OR  "https://parts-ai.<sub>.workers.dev/search"
   turnstileSiteKey: "",            // Cloudflare Turnstile SITE key (public). Leave "" to run without the bot check.
   maxPromptChars: 300,
   minRequestIntervalMs: 2500,      // client-side courtesy throttle (NOT security)
